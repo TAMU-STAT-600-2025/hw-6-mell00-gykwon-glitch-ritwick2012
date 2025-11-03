@@ -14,6 +14,19 @@
 // beta0 - p vector of starting point for coordinate-descent algorithm, optional
 // eps - precision level for convergence assessment, default 0.0001
 // s - step size for proximal gradient
+
+
+// Soft-threshold helper function
+
+// [[Rcpp::export]]
+double soft_c(double a, double lambda){
+  if (a >  lambda) return a - lambda;
+  if (a < -lambda) return a + lambda;
+  return 0.0;
+}
+
+// Main Nesterov LASSO function
+
 // [[Rcpp::export]]
 arma::colvec fitLASSOstandardized_prox_Nesterov_c(const arma::mat& Xtilde, const arma::colvec& Ytilde,
                                                   double lambda, const arma::colvec& beta_start, 
@@ -30,6 +43,7 @@ arma::colvec fitLASSOstandardized_prox_Nesterov_c(const arma::mat& Xtilde, const
 
   double t_prev = 1.0;
   int max_iter = 5000;
+
 
 
   return beta;
