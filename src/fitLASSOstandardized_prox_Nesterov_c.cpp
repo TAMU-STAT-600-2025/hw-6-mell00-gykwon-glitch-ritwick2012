@@ -44,7 +44,26 @@ arma::colvec fitLASSOstandardized_prox_Nesterov_c(const arma::mat& Xtilde, const
   double t_prev = 1.0;
   int max_iter = 5000;
 
-
+  // Objective function
+  auto f_eval = [&](const arma::colvec& b){
+    arma::colvec r2 = Ytilde - Xtilde * b;
+    double rss = 0.0;
+    for (int i = 0; i < n; ++i) {
+      double val = r2.at(i);
+      rss += val * val;
+    }
+    rss = rss / (2.0 * n);
+    
+    double l1 = 0.0;
+    for (int j = 0; j < p; ++j) {
+      double v = b.at(j);
+      l1 += std::sqrt(v * v);
+    }
+    return rss + lambda * l1;
+  };
+  
+  double f_curr = f_eval(x_curr);
+  double f_next = f_curr;
 
   return beta;
 }
