@@ -19,6 +19,18 @@ arma::colvec fitLASSOstandardized_prox_Nesterov_c(const arma::mat& Xtilde, const
                                                   double lambda, const arma::colvec& beta_start, 
                                                 double eps = 0.0001, double s = 0.01){
   // All input is assumed to be correct
+  int n = Xtilde.n_rows;
+  int p = Xtilde.n_cols;
+  
+  arma::colvec beta = beta_start;
+  arma::colvec y_curr = beta;
+  arma::colvec x_curr = beta;
+  arma::colvec grad(p);
+  arma::colvec z(p);
+  arma::colvec r(n);
+
+  double t_prev = 1.0;
+  int max_iter = 5000;
   
   // Initialize some parameters
   int n = Xtilde.n_rows, p = Xtilde.n_cols;
