@@ -2,9 +2,9 @@
 # Source the functions and necessary libraries
 #########################################
 # Lasso functions for coordinate descent
-source("R/LASSO_CoordinateDescent.R")
+source("LASSO_CoordinateDescent.R")
 # Functions written in the starter code
-source("R/LASSOProximalExample.R")
+source("LASSOProximalExample.R")
 # For later time comparisons
 library(bench)
 library(microbenchmark)
@@ -32,7 +32,8 @@ plot(out_prox2$fobj_vec[-c(1:40)])
 
 # Check the implementation time
 micro_out <- microbenchmark(
-  fitLASSOstandardized_prox_Nesterov(out$Xtilde, out$Ytilde, beta_start = rep(0, p),lambda = lambda1, eps = 1e-10, s = 0.1)
+  fitLASSOstandardized_prox_Nesterov(out$Xtilde, out$Ytilde, beta_start = rep(0, p),lambda = lambda1, eps = 1e-10, s = 0.1),
+  fitLASSO_prox_Nesterov(out$Xtilde, out$Ytilde, beta_start = rep(0, p),lambda = lambda1, eps = 1e-10, s = 0.1)
 )
 
 print(micro_out)
