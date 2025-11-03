@@ -36,7 +36,12 @@ fitLASSO_prox_Nesterov <- function(X, Y, lambda,
   # Call C++ fitLASSOstandardized_prox_Nesterov_c function to implement the algorithm
   beta_tilde = fitLASSOstandardized_prox_Nesterov_c(Xtilde, Ytilde, lambda, beta_start, eps, s)
   
+  # Compute standardized objective value
+  fmin <- lasso(Xtilde, Ytilde, beta_tilde, lambda)
+  
   # Perform back scaling and centering to get original intercept and coefficient vector
+  beta <- beta_tilde / std$weights
+  intercept <- std$Ymean - sum(std$Xmeans * beta)
   
   # Return 
   # beta - the solution (without center or scale)
