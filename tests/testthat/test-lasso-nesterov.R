@@ -32,3 +32,35 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   n <- nrow(Xt)
   0.5 * sum((Yt - Xt %*% btilde)^2) / n + lambda * sum(abs(btilde))
 }
+
+
+
+## 1) Basic shape/value checks on small random data
+
+{
+  test_name <- "shapes and finiteness of R vs C++ on small random data"
+  n <- 40; p <- 20
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.2 * max(abs(crossprod(std$Xtilde, std$Ytilde))) / n
+  
+  fit_r   <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lambda = lam,
+                                                beta_start = numeric(p), eps = 1e-9, s = NULL)
+  fit_cpp <- fitLASSO_prox_Nesterov(X, Y, lambda = lam,
+                                    beta_start = numeric(p), eps = 1e-9, s = NULL)
+  
+  stopifnot(is.numeric(fit_r$beta), length(fit_r$beta) == p, is.finite(fit_r$fmin))
+  stopifnot(is.numeric(fit_cpp$beta), length(fit_cpp$beta) == p, is.finite(fit_cpp$fmin))
+  stopifnot(is.numeric(fit_cpp$intercept), length(fit_cpp$intercept) == 1L)
+  
+  # compare on standardized scale
+  beta_cpp_tilde <- to_standardized_beta(fit_cpp$beta, std$weights)
+  f_cpp_std <- lasso_std(std$Xtilde, std$Ytilde, beta_cpp_tilde, lam)
+  f_r_std   <- lasso_std(std$Xtilde, std$Ytilde, fit_r$beta, lam)
+  
+  if (!(abs(f_cpp_std - f_r_std) <= 1e-6 * pmax(1, abs(f_r_std))))
+    stop(test_name, sprintf(" (f mismatch: cpp=%.6g r=%.6g)", f_cpp_std, f_r_std))
+  
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
