@@ -133,3 +133,28 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
 
+
+## 5) Monotone objective behavior and tail stability for R implementation ------------
+
+{
+  test_name <- "objective monotonicity and tail stability (R)"
+  n <- 25; p <- 12
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.12 * max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  
+  fit_r <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam, s = NULL, eps = 1e-8)
+  fvec <- fit_r$fobj_vec
+  stopifnot(all(is.finite(fvec)), length(fvec) >= 5)
+  
+  # small numerical noise ok, but no large upward jumps
+  fvec <- fit_r$fobj_vec
+  inc  <- diff(fvec)
+  if (max(inc) > 0) stop(test_name, " (objective increased)")
+  
+  tail_vec <- tail(fvec, min(100, length(fvec)))
+  rel_change <- max(abs(diff(tail_vec)) / pmax(1, abs(tail_vec[-1])))
+  if (!(rel_change < 1e-6)) stop(test_name, sprintf(" (tail not stable; rel_change=%.3e)", rel_change))
+  
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
