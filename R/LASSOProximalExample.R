@@ -1,92 +1,106 @@
 # Fit LASSO on standardized data using proximal gradient + Nesterov acceleration
-# Xtilde - centered & column-scaled X (n x p)
-# Ytilde - centered Y (n)
-# lambda - >= 0
-# beta_start - optional p-vector
-# eps - stopping tolerance on relative L1 change
-# s - step size (try ~ 1/L); if NULL, auto-choose s = 1/L with L = ||X||_op^2 / n
-
+# Xtilde: centered, column-scaled X (n x p)
+# Ytilde: centered Y (length n)
+# lambda: >= 0
+# beta_start: optional length-p numeric
+# eps: stopping tolerance on relative L1 change
+# s: step size; if NULL, s = 1/L with L ≈ ||X||_op^2 / n
 fitLASSOstandardized_prox_Nesterov <- function(
-    Xtilde, Ytilde, lambda, beta_start = NULL, eps = 1e-4, s = 1e-2
+    Xtilde, Ytilde, lambda, beta_start = NULL, eps = 1e-4, s = NULL, max_iter = 5000L
 ){
+  # checks
+  if (is.null(dim(Xtilde))) stop("Xtilde must be a numeric matrix")
+  if (!is.numeric(Xtilde) || !is.numeric(Ytilde)) stop("Xtilde and Ytilde must be numeric")
+  Xtilde <- as.matrix(Xtilde); storage.mode(Xtilde) <- "double"
+  Ytilde <- as.numeric(Ytilde)
   n <- nrow(Xtilde); p <- ncol(Xtilde)
-  if (length(Ytilde) != n) stop("Dimensions of X and Y don't match")
-  if (!is.numeric(lambda) || lambda < 0) stop("Only non-negative values of lambda are allowed!")
-  if (is.null(beta_start)) beta_start <- rep(0, p)
-  if (length(beta_start) != p) stop("Supplied initial starting point has length different from p!")
+  if (length(Ytilde) != n) stop("Dimensions of Xtilde and Ytilde do not match")
+  if (!is.numeric(lambda) || length(lambda) != 1L || lambda < 0)
+    stop("lambda must be a nonnegative scalar")
   
-  # auto step size if requested
-  if (is.null(s)) {
-    d1 <- svd(Xtilde, nu = 0, nv = 0)$d[1]
-    L  <- (d1 * d1) / n
-    s  <- 1 / (L + 1e-12)
-  }
-  if (!is.numeric(s) || s <= 0) stop("step size s must be positive")
+  # start
+  if (is.null(beta_start)) beta_start <- numeric(p)
+  if (length(beta_start) != p) stop("beta_start must have length p")
+  beta_start <- as.numeric(beta_start)
   
-  # Helper objective using existing lasso()
+  # objective using existing lasso()
   f_eval <- function(b) as.numeric(lasso(Xtilde, Ytilde, b, lambda))
   
-  # Initialize Nesterov state
-  x_curr <- as.numeric(beta_start)
+  # auto step if needed: s = 1 / L, L ≈ ||X||_op^2 / n via power iteration
+  if (is.null(s)) {
+    v <- rnorm(p); v <- v / sqrt(sum(v * v))
+    for (k in 1:10) {
+      v <- crossprod(Xtilde, Xtilde %*% v) / n
+      v <- as.numeric(v); nv <- sqrt(sum(v * v))
+      if (!is.finite(nv) || nv == 0) { v[] <- 0; v[1] <- 1; break }
+      v <- v / nv
+    }
+    L <- as.numeric(crossprod(v, crossprod(Xtilde, Xtilde %*% v)) / n)
+    if (!is.finite(L) || L <= 0) L <- 1
+    s <- 1 / L
+  }
+  if (!is.numeric(s) || length(s) != 1L || s <= 0) stop("step size s must be positive")
+  
+  # Nesterov state
+  x_curr <- beta_start
   y_curr <- x_curr
   t_prev <- 1
-  max_iter <- 5000L
   
   f_curr <- f_eval(x_curr)
   if (!is.finite(f_curr)) stop("objective is not finite at initialization")
-  f_hist <- numeric(0)
   
+  f_hist <- numeric(max_iter)
   converged <- FALSE
+  iters_done <- max_iter
+  
   for (iter in 1:max_iter) {
-    # Track pre-update objective for plotting
-    f_hist <- c(f_hist, f_curr)
+    f_hist[iter] <- f_curr
     
-    # Gradient of g(b) = (1/(2n))||Y - Xb||^2 at y_curr: ∇g = -(1/n) X^T (Y - X y_curr)
-    r    <- Ytilde - as.vector(Xtilde %*% y_curr) # n-vector
-    grad <- -drop(crossprod(Xtilde, r)) / n # p-vector
+    # gradient at y_curr: ∇g = -(1/n) X^T (Y - X y_curr)
+    r    <- Ytilde - as.vector(Xtilde %*% y_curr)
+    grad <- -drop(crossprod(Xtilde, r)) / n
     
-    # proximal step (soft threshold)
+    # proximal step with your soft()
     z      <- y_curr - s * grad
     x_next <- soft(z, lambda * s)
     
-    # Nesterov acceleration
+    # Nesterov update
     t_next <- (1 + sqrt(1 + 4 * t_prev^2)) / 2
     y_next <- x_next + ((t_prev - 1) / t_next) * (x_next - x_curr)
     
-    # monotone safeguard (restart momentum if objective increased)
+    # monotone restart if objective increases
     f_next <- f_eval(x_next)
-    if (!is.finite(f_next)) {
-      # fall back to no momentum
-      t_next <- 1
-      y_next <- x_next
-      f_next <- f_eval(x_next)  # recompute (same)
-    } else if (f_next > f_curr) {
-      # adaptive restart: drop momentum this round
+    if (!is.finite(f_next) || f_next > f_curr) {
       t_next <- 1
       y_next <- x_next
       f_next <- f_eval(x_next)
     }
     
-    # convergence check (relative L1 change)
+    # convergence: relative L1 change
     if (sum(abs(x_next - x_curr)) / (1 + sum(abs(x_curr))) < eps) {
       x_curr <- x_next
       f_curr <- f_next
       converged <- TRUE
+      iters_done <- iter
+      f_hist <- f_hist[seq_len(iter)]
       break
     }
     
-    # update state
+    # state update
     x_curr <- x_next
     y_curr <- y_next
     t_prev <- t_next
     f_curr <- f_next
+    
+    if (iter == max_iter) f_hist <- f_hist[seq_len(iter)]
   }
   
   list(
     beta = x_curr,
     fmin = f_curr,
-    iters = if (converged) iter else max_iter,
+    iters = iters_done,
     converged = converged,
     fobj_vec = f_hist
   )
 }
+
