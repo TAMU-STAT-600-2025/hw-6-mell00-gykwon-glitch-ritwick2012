@@ -22,3 +22,7 @@ kkt_check <- function(Xt, Yt, btilde, lambda, tol = 1e-6) {
   list(ok = ok_act && ok_inact, max_act = ifelse(length(act), max(abs(g[act] - lambda * sign(btilde[act]))), 0),
        max_inact = ifelse(length(inact), max(pmax(0, abs(g[inact]) - lambda)), 0))
 }
+
+
+# convert original scale beta to standardized scale using weights
+to_standardized_beta <- function(beta_orig, weights) as.numeric(beta_orig * weights)
