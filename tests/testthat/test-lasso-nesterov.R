@@ -110,3 +110,26 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 4) Step size handling (s = NULL auto, and positive s) -----------------
+
+{
+  test_name <- "step size auto and explicit positive s"
+  n <- 35; p <- 18
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.1 * max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  
+  # auto step
+  fr_auto <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam, s = NULL, eps = 1e-8)
+  fc_auto <- fitLASSO_prox_Nesterov(X, Y, lam, s = NULL, eps = 1e-8)
+  
+  # explicit s
+  fr_exp <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam, s = 0.1, eps = 1e-8)
+  fc_exp <- fitLASSO_prox_Nesterov(X, Y, lam, s = 0.1, eps = 1e-8)
+  
+  stopifnot(is.finite(fr_auto$fmin), is.finite(fc_auto$fmin), is.finite(fr_exp$fmin), is.finite(fc_exp$fmin))
+  
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
+
