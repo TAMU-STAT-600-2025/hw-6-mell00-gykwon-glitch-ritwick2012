@@ -6,7 +6,14 @@
 #' @param beta_start numeric vector length ncol(X)
 #' @param eps convergence tolerance
 #' @param s step size; if NULL, estimated
-#' @return list(beta, intercept, fmin, obj, lambda, eps, step)
+#' @return A list with:
+#' \describe{
+#'   \item{beta}{Numeric length p, coefficients on original scale.}
+#'   \item{intercept}{Numeric scalar.}
+#'   \item{fmin}{Objective value on standardized scale.}
+#'   \item{obj}{Optional objective trace if available; may be NULL.}
+#'   \item{lambda, eps, step}{Echoed inputs.}
+#' }
 #' @export
 fitLASSO_prox_Nesterov <- function(X, Y, lambda,
                                    beta_start = NULL, eps = 1e-4, s = NULL) {
