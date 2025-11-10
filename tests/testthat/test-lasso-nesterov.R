@@ -84,3 +84,29 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 3) Lambda extremes -----------------------------------------------------
+
+{
+  test_name <- "lambda extremes (0 and huge)"
+  n <- 30; p <- 15
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam_max <- max(abs(crossprod(std$Xtilde, std$Ytilde))) / n
+  
+  # lambda = 0 should match least-squares prox step convergence, check finiteness
+  fit0_r   <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, 0, eps = 1e-10, s = NULL)
+  fit0_cpp <- fitLASSO_prox_Nesterov(X, Y, 0, eps = 1e-10, s = NULL)
+  stopifnot(is.finite(fit0_r$fmin), is.finite(fit0_cpp$fmin))
+  
+  # very large lambda -> all zeros approximately
+  lam_h <- 100 * lam_max
+  fith_r   <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam_h, eps = 1e-10, s = NULL)
+  fith_cpp <- fitLASSO_prox_Nesterov(X, Y, lam_h, eps = 1e-10, s = NULL)
+  
+  if (!(max(abs(fith_r$beta)) < 1e-8)) stop(test_name, " (R: beta not ~0)")
+  if (!(max(abs(fith_cpp$beta)) < 1e-8)) stop(test_name, " (C++: beta not ~0)")
+  
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
