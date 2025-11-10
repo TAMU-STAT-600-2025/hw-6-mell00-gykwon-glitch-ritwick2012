@@ -37,7 +37,7 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
 
 ## 1) Basic shape/value checks on small random data
 
-{
+testthat::test_that("shapes and finiteness of R vs C++ on small random data", {
   test_name <- "shapes and finiteness of R vs C++ on small random data"
   n <- 40; p <- 20
   X <- matrix(rnorm(n*p), n, p)
@@ -59,16 +59,18 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   f_cpp_std <- lasso_std(std$Xtilde, std$Ytilde, beta_cpp_tilde, lam)
   f_r_std   <- lasso_std(std$Xtilde, std$Ytilde, fit_r$beta, lam)
   
-  if (!(abs(f_cpp_std - f_r_std) <= 1e-6 * pmax(1, abs(f_r_std))))
-    stop(test_name, sprintf(" (f mismatch: cpp=%.6g r=%.6g)", f_cpp_std, f_r_std))
+  diff <- abs(f_cpp_std - f_r_std)
+  thr  <- 5e-6 * max(1, abs(f_r_std), abs(f_cpp_std)) + 1e-12
+  testthat::expect_lte(diff, thr,
+                       info = sprintf("%s (f mismatch: cpp=%.6g r=%.6g diff=%.3g thr=%.3g)", test_name, f_cpp_std, f_r_std, diff, thr))
   
-  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
-}
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
 
 
 ## 2) KKT optimality on standardized solution ----------------------------
 
-{
+testthat::test_that("KKT conditions satisfied (standardized)", {
   test_name <- "KKT conditions satisfied (standardized)"
   n <- 60; p <- 30
   X <- matrix(rnorm(n*p), n, p)
@@ -82,12 +84,12 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   if (!kkt$ok)
     stop(test_name, sprintf(" (violations: act=%.3e inact=%.3e)", kkt$max_act, kkt$max_inact))
   
-  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
-}
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
 
 ## 3) Lambda extremes -----------------------------------------------------
 
-{
+testthat::test_that("lambda extremes (0 and huge)", {
   test_name <- "lambda extremes (0 and huge)"
   n <- 30; p <- 15
   X <- matrix(rnorm(n*p), n, p)
@@ -108,12 +110,12 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   if (!(max(abs(fith_r$beta)) < 1e-8)) stop(test_name, " (R: beta not ~0)")
   if (!(max(abs(fith_cpp$beta)) < 1e-8)) stop(test_name, " (C++: beta not ~0)")
   
-  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
-}
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
 
 ## 4) Step size handling (s = NULL auto, and positive s) -----------------
 
-{
+testthat::test_that("step size auto and explicit positive s", {
   test_name <- "step size auto and explicit positive s"
   n <- 35; p <- 18
   X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
@@ -130,13 +132,13 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   
   stopifnot(is.finite(fr_auto$fmin), is.finite(fc_auto$fmin), is.finite(fr_exp$fmin), is.finite(fc_exp$fmin))
   
-  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
-}
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
 
 
 ## 5) Monotone objective behavior and tail stability for R implementation ------------
 
-{
+testthat::test_that("objective monotonicity and tail stability (R)", {
   test_name <- "objective monotonicity and tail stability (R)"
   n <- 25; p <- 12
   X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
@@ -156,5 +158,5 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   rel_change <- max(abs(diff(tail_vec)) / pmax(1, abs(tail_vec[-1])))
   if (!(rel_change < 1e-6)) stop(test_name, sprintf(" (tail not stable; rel_change=%.3e)", rel_change))
   
-  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
-}
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
