@@ -26,3 +26,9 @@ kkt_check <- function(Xt, Yt, btilde, lambda, tol = 1e-6) {
 
 # convert original scale beta to standardized scale using weights
 to_standardized_beta <- function(beta_orig, weights) as.numeric(beta_orig * weights)
+
+# objective on standardized scale
+lasso_std <- function(Xt, Yt, btilde, lambda) {
+  n <- nrow(Xt)
+  0.5 * sum((Yt - Xt %*% btilde)^2) / n + lambda * sum(abs(btilde))
+}
