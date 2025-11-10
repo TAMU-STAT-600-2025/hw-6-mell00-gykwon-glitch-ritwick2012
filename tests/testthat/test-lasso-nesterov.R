@@ -64,3 +64,23 @@ lasso_std <- function(Xt, Yt, btilde, lambda) {
   
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+
+## 2) KKT optimality on standardized solution ----------------------------
+
+{
+  test_name <- "KKT conditions satisfied (standardized)"
+  n <- 60; p <- 30
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.15 * max(abs(crossprod(std$Xtilde, std$Ytilde))) / n
+  
+  fit_r <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam, s = NULL, eps = 1e-8)
+  
+  kkt <- kkt_check(std$Xtilde, std$Ytilde, fit_r$beta, lam, tol = 1e-5)
+  if (!kkt$ok)
+    stop(test_name, sprintf(" (violations: act=%.3e inact=%.3e)", kkt$max_act, kkt$max_inact))
+  
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
