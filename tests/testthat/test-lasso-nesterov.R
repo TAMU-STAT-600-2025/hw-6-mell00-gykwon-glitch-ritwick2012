@@ -260,3 +260,41 @@ testthat::test_that("auto step matches explicit 1/L (R standardized)", {
   testthat::expect_true(abs(fr_auto$fmin - fr_exp$fmin) <= 1e-6 * max(1, abs(fr_exp$fmin)))
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+## 10) R vs C++ coefficients close on standardized scale -----------------
+
+testthat::test_that("R vs C++ beta close on standardized scale", {
+  test_name <- "R vs C++ beta close on standardized scale"
+  n <- 90; p <- 45
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.12 * max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  
+  fr <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam, s = NULL, eps = 1e-9)
+  fc <- fitLASSO_prox_Nesterov(X, Y, lam, s = NULL, eps = 1e-9)
+  
+  b_r <- fr$beta
+  b_c <- to_standardized_beta(fc$beta, std$weights)
+  
+  # objectives on standardized scale
+  f_r <- lasso_std(std$Xtilde, std$Ytilde, b_r, lam)
+  f_c <- lasso_std(std$Xtilde, std$Ytilde, b_c, lam)
+  tol_obj <- 5e-6 * max(1, abs(f_r), abs(f_c)) + 1e-12
+  testthat::expect_true(abs(f_r - f_c) <= tol_obj,
+                        sprintf("objective mismatch: R=%.6g C++=%.6g tol=%.2e", f_r, f_c, tol_obj))
+  
+  # cosine similarity, unless both are ~0
+  nr <- sqrt(sum(b_r^2)); nc <- sqrt(sum(b_c^2))
+  if (nr < 1e-10 && nc < 1e-10) {
+    testthat::expect_true(max(abs(b_r)) < 1e-8 && max(abs(b_c)) < 1e-8, "both should be near zero")
+  } else if (nr > 0 && nc > 0) {
+    cos_sim <- sum(b_r * b_c) / (nr * nc)
+    testthat::expect_true(cos_sim >= 0.99,
+                          sprintf("weak alignment: cos=%.6f", cos_sim))
+  } else {
+    # one near-0 and the other not, allow if objectives still approx. match
+    testthat::expect_true(abs(f_r - f_c) <= tol_obj)
+  }
+  
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
