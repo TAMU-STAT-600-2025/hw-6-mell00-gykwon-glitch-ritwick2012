@@ -1,6 +1,8 @@
 
 #' Run timing and consistency checks for the Nesterov LASSO implementations
-#'
+#' 
+#' @importFrom stats rnorm
+#' @importFrom graphics par abline
 #' @param n Integer. Rows (ignored if X,Y supplied).
 #' @param p Integer. Columns (ignored if X,Y supplied).
 #' @param seed Integer. RNG seed used only if X,Y are NULL.
