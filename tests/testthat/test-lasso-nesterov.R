@@ -170,3 +170,21 @@ testthat::test_that("C++ wrapper KKT on standardized scale", {
   testthat::expect_true(k$ok)
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+## 7) Consistency of intercept/back-transform for C++ wrapper
+
+testthat::test_that("back-transform matches standardized objective (C++)", {
+  test_name <- "back-transform matches standardized objective (C++)"
+  n <- 60; p <- 25
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.1 * max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  
+  fit_cpp <- fitLASSO_prox_Nesterov(X, Y, lam, eps = 1e-8, s = NULL)
+  btilde  <- to_standardized_beta(fit_cpp$beta, std$weights)
+  f_std   <- lasso_std(std$Xtilde, std$Ytilde, btilde, lam)
+  
+  testthat::expect_true(is.finite(fit_cpp$fmin))
+  testthat::expect_true(abs(fit_cpp$fmin - f_std) <= 1e-6 * max(1, abs(f_std)))
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
