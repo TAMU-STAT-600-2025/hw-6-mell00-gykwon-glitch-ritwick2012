@@ -1,36 +1,43 @@
 
 #' Run timing and consistency checks for the Nesterov LASSO implementations
 #'
-#' @param n Integer. Rows.
-#' @param p Integer. Columns.
-#' @param seed Integer. RNG seed.
+#' @param n Integer. Rows (ignored if X,Y supplied).
+#' @param p Integer. Columns (ignored if X,Y supplied).
+#' @param seed Integer. RNG seed used only if X,Y are NULL.
 #' @param plot Logical. If TRUE, make simple diagnostic plots.
-#' @param s_step Numeric or NULL. Step size for prox-Nesterov; if NULL the R version auto-computes.
-#' @return list with fits and microbenchmark object
+#' @param s_step Numeric or NULL. Common step size for both solvers.
+#' @param X Optional numeric matrix. If provided, Y must also be provided.
+#' @param Y Optional numeric vector. If provided, X must also be provided.
+#' @return list with fits, microbenchmark, lambda, std, and the X,Y used
 #' @export
 run_lasso_time_comparison <- function(n = 30, p = 50, seed = 38947,
-                                      plot = interactive(), s_step = 0.1) {
-  set.seed(seed)
-  X <- matrix(rnorm(n * p), n, p)
-  Y <- rnorm(n)
+                                      plot = interactive(), s_step = 0.1,
+                                      X = NULL, Y = NULL) {
+  if (is.null(X) || is.null(Y)) {
+    set.seed(seed)
+    X <- matrix(rnorm(n * p), n, p)
+    Y <- rnorm(n)
+  } else {
+    X <- as.matrix(X); storage.mode(X) <- "double"
+    Y <- as.numeric(Y)
+    n <- nrow(X); p <- ncol(X)
+    if (length(Y) != n) stop("length(Y) must equal nrow(X)")
+  }
   
-  std <- standardizeXY(X, Y)  # from LASSO_CoordinateDescent.R
+  std <- standardizeXY(X, Y)
   nX <- nrow(std$Xtilde)
-  
   lambda_max <- max(abs(crossprod(std$Xtilde, std$Ytilde))) / nX
   lambda1 <- 0.1 * lambda_max
   
-  # C++ path wrapped by Rcpp
-  fit_cpp <- fitLASSO_prox_Nesterov(std$Xtilde, std$Ytilde, lambda1,
+  # C++ wrapper expects original X,Y
+  fit_cpp <- fitLASSO_prox_Nesterov(X, Y, lambda1,
                                     beta_start = numeric(p),
-                                    eps = 1e-10,
-                                    s = s_step)
+                                    eps = 1e-10, s = s_step)
   
-  # R path
+  # R standardized path uses Xtilde,Ytilde
   fit_r <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lambda1,
                                               beta_start = numeric(p),
-                                              eps = 1e-10,
-                                              s = s_step)
+                                              eps = 1e-10, s = s_step)
   
   if (plot) {
     op <- par(no.readonly = TRUE); on.exit(par(op), add = TRUE)
@@ -43,13 +50,12 @@ run_lasso_time_comparison <- function(n = 30, p = 50, seed = 38947,
     }
   }
   
-  # microbenchmark
   mb <- microbenchmark::microbenchmark(
-    cpp = fitLASSO_prox_Nesterov(std$Xtilde, std$Ytilde, lambda1,
+    cpp = fitLASSO_prox_Nesterov(X, Y, lambda1,
                                  beta_start = numeric(p), eps = 1e-10, s = s_step),
-    r = fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lambda1,
+    r   = fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lambda1,
                                              beta_start = numeric(p), eps = 1e-10, s = s_step),
-    times = 20L
+    times = 20L, unit = "ms"
   )
   
   list(
@@ -57,6 +63,9 @@ run_lasso_time_comparison <- function(n = 30, p = 50, seed = 38947,
     fit_cpp = fit_cpp,
     fit_r = fit_r,
     fmin_diff = fit_cpp$fmin - fit_r$fmin,
-    bench = mb
+    bench = mb,
+    std = std,
+    X = X,
+    Y = Y
   )
 }
