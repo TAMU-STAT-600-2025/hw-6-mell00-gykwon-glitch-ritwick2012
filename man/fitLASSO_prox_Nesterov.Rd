@@ -2,21 +2,33 @@
 % Please edit documentation in R/LASSO_wrapper.R
 \name{fitLASSO_prox_Nesterov}
 \alias{fitLASSO_prox_Nesterov}
-\title{Title}
+\title{LASSO via proximal gradient with Nesterov acceleration}
 \usage{
-fitLASSO_prox_Nesterov(X, Y, lambda, beta_start = NULL, eps = 1e-04, s = 0.01)
+fitLASSO_prox_Nesterov(X, Y, lambda, beta_start = NULL, eps = 1e-04, s = NULL)
 }
 \arguments{
-\item{X}{}
+\item{X}{numeric matrix}
 
-\item{lambda}{}
+\item{Y}{numeric vector, length nrow(X)}
 
-\item{beta_start}{}
+\item{lambda}{nonnegative scalar}
 
-\item{eps}{}
+\item{beta_start}{numeric vector length ncol(X)}
 
-\item{s}{}
+\item{eps}{convergence tolerance}
+
+\item{s}{step size; if NULL, estimated}
+}
+\value{
+A list with:
+\describe{
+  \item{beta}{Numeric length p, coefficients on original scale.}
+  \item{intercept}{Numeric scalar.}
+  \item{fmin}{Objective value on standardized scale.}
+  \item{obj}{Optional objective trace if available; may be NULL.}
+  \item{lambda, eps, step}{Echoed inputs.}
+}
 }
 \description{
-Title
+LASSO via proximal gradient with Nesterov acceleration
 }
