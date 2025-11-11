@@ -298,3 +298,20 @@ testthat::test_that("R vs C++ beta close on standardized scale", {
   
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+
+## 11) Objective nonincreasing per iteration w/ restart (R) ----
+
+testthat::test_that("objective is nonincreasing across iterations (R standardized)", {
+  test_name <- "objective is nonincreasing across iterations (R standardized)"
+  n <- 40; p <- 20
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.1 * max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  
+  fr <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam, s = NULL, eps = 1e-10)
+  f <- fr$fobj_vec
+  
+  testthat::expect_true(all(diff(f) <= 1e-12))
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
