@@ -154,3 +154,19 @@ testthat::test_that("objective monotonicity and tail stability (R)", {
   
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+## 6) C++ solution satisfies KKT on standardized scale
+testthat::test_that("C++ wrapper KKT on standardized scale", {
+  test_name <- "KKT satisfied on standardized scale (C++)"
+  n <- 70; p <- 35
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.2 * max(abs(crossprod(std$Xtilde, std$Ytilde))) / n
+  
+  fit_cpp <- fitLASSO_prox_Nesterov(X, Y, lam, eps = 1e-8, s = NULL)
+  btilde  <- to_standardized_beta(fit_cpp$beta, std$weights)
+  k <- kkt_check(std$Xtilde, std$Ytilde, btilde, lam, tol = 5e-3)
+  
+  testthat::expect_true(k$ok)
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
