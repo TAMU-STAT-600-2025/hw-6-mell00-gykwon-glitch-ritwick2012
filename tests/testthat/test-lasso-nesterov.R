@@ -378,3 +378,44 @@ testthat::test_that("R and C++ outputs finite under tiny and huge scales", {
   testthat::expect_true(all(is.finite(c(r0$fmin, r1$fmin, c0$fmin, c1$fmin))))
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+## 14) Reasonable timing and consistency (R and C++) -----------------------
+ 
+testthat::test_that("reasonable timing/consistency (Nesterov R and C++)", {
+  testthat::skip_on_cran()
+  testthat::skip_on_ci()
+  if (!requireNamespace("microbenchmark", quietly = TRUE)) testthat::skip("microbenchmark not installed")
+  test_name <- "reasonable timing/consistency (Nesterov R and C++)"
+  set.seed(2025)
+  n <- 60; p <- 80
+  # generate X,Y here so helper and objective use the same data
+  X <- matrix(rnorm(n * p), n, p)
+  Y <- rnorm(n)
+  std  <- standardizeXY(X, Y)
+  
+  # deterministic common step via SVD
+  d1 <- svd(std$Xtilde, nu = 0, nv = 0)$d[1]
+  L  <- (d1 * d1) / n
+  s_exp <- 1 / L
+  
+  out <- suppressWarnings(
+    run_lasso_time_comparison(n = n, p = p, seed = 2025, plot = FALSE,
+                              s_step = s_exp, X = X, Y = Y))
+  
+  # objectives agree on standardized scale using the SAME std/data
+  b_cpp_tilde <- out$fit_cpp$beta * out$std$weights
+  lam <- out$lambda
+  f_cpp_std <- 0.5 * sum((out$std$Ytilde - out$std$Xtilde %*% b_cpp_tilde)^2) / n + lam * sum(abs(b_cpp_tilde))
+  f_r_std   <- out$fit_r$fmin
+  testthat::expect_true(abs(f_cpp_std - f_r_std) <= 2e-5 * max(1, abs(f_r_std)),
+                        sprintf("objective mismatch: C++=%.6g R=%.6g", f_cpp_std, f_r_std))
+  
+  # similar timing per assignment
+  sm <- summary(out$bench)
+  med_cpp <- sm[sm$expr == "cpp", "median"]
+  med_r   <- sm[sm$expr == "r",   "median"]
+  ratio <- as.numeric(med_cpp / med_r)
+  testthat::expect_true(ratio >= 0.5 && ratio <= 2.5,
+                        sprintf("timing ratio cpp/r = %.2f not in [0.5, 2.5]", ratio))
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
