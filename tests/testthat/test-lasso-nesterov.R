@@ -315,3 +315,45 @@ testthat::test_that("objective is nonincreasing across iterations (R standardize
   testthat::expect_true(all(diff(f) <= 1e-12))
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+
+## 12) Deterministic outputs given same inputs (R and C++) ---------------------------
+
+testthat::test_that("deterministic runs for R and C++ Nesterov", {
+  test_name <- "deterministic runs for R and C++ Nesterov"
+  n <- 60; p <- 25
+  set.seed(999)
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.09 * max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  
+  # fixed step via SVD for determinism
+  d1 <- svd(std$Xtilde, nu = 0, nv = 0)$d[1]
+  L  <- (d1 * d1) / n
+  s_exp <- 1 / L
+  
+  # R standardized solver twice with identical s/eps/max_iter
+  a1 <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam,
+                                           s = s_exp, eps = 1e-12, max_iter = 2000L)
+  a2 <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam,
+                                           s = s_exp, eps = 1e-12, max_iter = 2000L)
+  
+  # C++ wrapper twice with identical s/eps
+  c1 <- fitLASSO_prox_Nesterov(X, Y, lam, s = s_exp, eps = 1e-12)
+  c2 <- fitLASSO_prox_Nesterov(X, Y, lam, s = s_exp, eps = 1e-12)
+  
+  # allow tiny FP noise
+  tol_beta <- 1e-9
+  tol_obj  <- 1e-10 * max(1, abs(a1$fmin), abs(a2$fmin))
+  
+  testthat::expect_true(max(abs(a1$beta - a2$beta)) <= tol_beta)
+  testthat::expect_true(abs(a1$fmin - a2$fmin) <= tol_obj)
+  
+  tol_beta_cpp <- 1e-9
+  tol_obj_cpp  <- 1e-10 * max(1, abs(c1$fmin), abs(c2$fmin))
+  
+  testthat::expect_true(max(abs(c1$beta - c2$beta)) <= tol_beta_cpp)
+  testthat::expect_true(abs(c1$fmin - c2$fmin) <= tol_obj_cpp)
+  
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
