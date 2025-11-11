@@ -188,3 +188,51 @@ testthat::test_that("back-transform matches standardized objective (C++)", {
   testthat::expect_true(abs(fit_cpp$fmin - f_std) <= 1e-6 * max(1, abs(f_std)))
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+## 8) Warm start reduces iterations (R standardized solver) -------------
+
+testthat::test_that("warm start improves early progress (R standardized)", {
+  test_name <- "warm start improves early progress (R standardized)"
+  n <- 80; p <- 40
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam_max <- max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  lam_hi  <- 0.5  * lam_max
+  lam_lo  <- 0.05 * lam_max
+  
+  # common explicit step s = 1/L
+  v <- rnorm(p); v <- v / sqrt(sum(v^2))
+  for (k in 1:12) { v <- crossprod(std$Xtilde, std$Xtilde %*% v) / n; v <- as.numeric(v); v <- v / sqrt(sum(v^2)) }
+  L <- as.numeric(crossprod(v, crossprod(std$Xtilde, std$Xtilde %*% v)) / n)
+  s_exp <- 1 / L
+  
+  # high-lambda solve to produce a warm start
+  fit_hi <- fitLASSOstandardized_prox_Nesterov(
+    std$Xtilde, std$Ytilde, lam_hi,
+    beta_start = numeric(p), eps = 1e-10, s = s_exp
+  )
+  
+  # fixed small budget at low lambda, disable early stopping via eps=0 and set max_iter
+  budget <- 40L
+  cold <- fitLASSOstandardized_prox_Nesterov(
+    std$Xtilde, std$Ytilde, lam_lo,
+    beta_start = numeric(p), eps = 0, s = s_exp, max_iter = budget
+  )
+  warm <- fitLASSOstandardized_prox_Nesterov(
+    std$Xtilde, std$Ytilde, lam_lo,
+    beta_start = fit_hi$beta, eps = 0, s = s_exp, max_iter = budget
+  )
+  
+  # compare objectives after the same number of iterations
+  # use the last recorded value (budget-th entry)
+  f_cold <- tail(cold$fobj_vec, 1)
+  f_warm <- tail(warm$fobj_vec, 1)
+  
+  # warm should be no worse than cold within small numerical slack
+  tol <- 1e-5 * max(1, abs(f_cold), abs(f_warm)) + 1e-8
+  testthat::expect_true(f_warm <= f_cold + tol,
+                        sprintf("budget=%d, warm=%.6g, cold=%.6g, tol=%.2e", 
+                                budget, f_warm, f_cold, tol))
+  
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
