@@ -28,17 +28,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // fitLASSOstandardized_prox_Nesterov_c
-arma::colvec fitLASSOstandardized_prox_Nesterov_c(const arma::mat& Xtilde, const arma::colvec& Ytilde, double lambda, const arma::colvec& beta_start, double eps, double s);
+arma::colvec fitLASSOstandardized_prox_Nesterov_c(const arma::mat& Xtilde, const arma::colvec& Ytilde, const double lambda, const arma::colvec& beta_start, const double eps, const double s);
 RcppExport SEXP _GroupHW_fitLASSOstandardized_prox_Nesterov_c(SEXP XtildeSEXP, SEXP YtildeSEXP, SEXP lambdaSEXP, SEXP beta_startSEXP, SEXP epsSEXP, SEXP sSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type Xtilde(XtildeSEXP);
     Rcpp::traits::input_parameter< const arma::colvec& >::type Ytilde(YtildeSEXP);
-    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const arma::colvec& >::type beta_start(beta_startSEXP);
-    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
-    Rcpp::traits::input_parameter< double >::type s(sSEXP);
+    Rcpp::traits::input_parameter< const double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< const double >::type s(sSEXP);
     rcpp_result_gen = Rcpp::wrap(fitLASSOstandardized_prox_Nesterov_c(Xtilde, Ytilde, lambda, beta_start, eps, s));
     return rcpp_result_gen;
 END_RCPP
