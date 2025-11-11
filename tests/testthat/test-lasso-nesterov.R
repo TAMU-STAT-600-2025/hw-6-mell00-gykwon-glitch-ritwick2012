@@ -236,3 +236,27 @@ testthat::test_that("warm start improves early progress (R standardized)", {
   
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+## 9) Auto step matches explicit 1/L step (R standardized solver) -------------
+
+testthat::test_that("auto step matches explicit 1/L (R standardized)", {
+  test_name <- "auto step matches explicit 1/L (R standardized)"
+  n <- 50; p <- 30
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.08 * max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  
+  v <- rnorm(p); v <- v / sqrt(sum(v^2))
+  for (k in 1:12) {
+    v <- crossprod(std$Xtilde, std$Xtilde %*% v) / n
+    v <- as.numeric(v); v <- v / sqrt(sum(v^2))
+  }
+  L <- as.numeric(crossprod(v, crossprod(std$Xtilde, std$Xtilde %*% v))/n)
+  s_exp <- 1 / L
+  
+  fr_auto <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam, s = NULL, eps = 1e-9)
+  fr_exp  <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam, s = s_exp, eps = 1e-9)
+  
+  testthat::expect_true(abs(fr_auto$fmin - fr_exp$fmin) <= 1e-6 * max(1, abs(fr_exp$fmin)))
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
