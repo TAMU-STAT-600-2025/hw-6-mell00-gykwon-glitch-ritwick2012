@@ -16,114 +16,84 @@
 // s - step size for proximal gradient
 
 
-// Soft-threshold helper function
-
-// [[Rcpp::export]]
-double soft_c(double a, double lambda){
-  if (a >  lambda) return a - lambda;
-  if (a < -lambda) return a + lambda;
+// Soft-threshold
+inline double soft_c(const double a, const double lam) {
+  if (a >  lam) return a - lam;
+  if (a < -lam) return a + lam;
   return 0.0;
 }
 
-// Main Nesterov LASSO function
-
 // [[Rcpp::export]]
-arma::colvec fitLASSOstandardized_prox_Nesterov_c(const arma::mat& Xtilde, const arma::colvec& Ytilde,
-                                                  double lambda, const arma::colvec& beta_start, 
-                                                double eps = 0.0001, double s = 0.01){
-  // All input is assumed to be correct
-  int n = Xtilde.n_rows;
-  int p = Xtilde.n_cols;
-  arma::colvec beta(p);
+arma::colvec fitLASSOstandardized_prox_Nesterov_c(const arma::mat& Xtilde,
+                                                  const arma::colvec& Ytilde,
+                                                  const double lambda,
+                                                  const arma::colvec& beta_start,
+                                                  const double eps = 1e-4,
+                                                  const double s = 1e-2) {
+  const int n = Xtilde.n_rows;
+  const int p = Xtilde.n_cols;
+  if (Ytilde.n_elem != static_cast<unsigned>(n))
+    Rcpp::stop("Dimensions of Xtilde and Ytilde do not match");
+  if (lambda < 0.0) Rcpp::stop("lambda must be nonnegative");
+  if (beta_start.n_elem != static_cast<unsigned>(p))
+    Rcpp::stop("beta_start must have length p");
+  if (!(s > 0.0)) Rcpp::stop("step size s must be positive");
+  if (!(eps > 0.0)) Rcpp::stop("eps must be positive");
+  
+  const int max_iter = 5000;
+  
   arma::colvec x_curr = beta_start;
   arma::colvec y_curr = x_curr;
-  arma::colvec grad(p);
-  arma::colvec z(p);
-  arma::colvec r(n);
-
-  double t_prev = 1.0;
-  int max_iter = 5000;
-
-  // Objective function
-  auto f_eval = [&](const arma::colvec& b){
-    arma::colvec r2 = Ytilde - Xtilde * b;
-    double rss = 0.0;
-    for (int i = 0; i < n; ++i) {
-      double val = r2.at(i);
-      rss += val * val;
-    }
-    rss = rss / (2.0 * n);
-    
-    double l1 = 0.0;
-    for (int j = 0; j < p; ++j) {
-      double v = b.at(j);
-      l1 += std::sqrt(v * v);
-    }
+  
+  // Objective: (1/2n)||Y - Xb||^2 + lambda||b||_1
+  auto f_eval = [&](const arma::colvec& b) -> double {
+    arma::colvec r = Ytilde - Xtilde * b;
+    const double rss = arma::dot(r, r) / (2.0 * n);
+    const double l1  = arma::sum(arma::abs(b));
     return rss + lambda * l1;
   };
   
   double f_curr = f_eval(x_curr);
-  double f_next = f_curr;
+  if (!std::isfinite(f_curr)) Rcpp::stop("objective not finite at initialization");
   
+  double t_prev = 1.0;
+  arma::colvec grad(p), z(p), x_next(p), y_next(p);
   
-  // Main loop
   for (int iter = 0; iter < max_iter; ++iter) {
-    // r = Y - X * y_curr
-    r = Ytilde - Xtilde * y_curr;
+    // r = Y - X y; grad = -(1/n) X^T r
+    arma::colvec r = Ytilde - Xtilde * y_curr;
+    grad = -(Xtilde.t() * r) / static_cast<double>(n);
     
-    // grad = -(1/n) X^T r
-    for (int j = 0; j < p; ++j) grad.at(j) = 0.0;
-    for (int j = 0; j < p; ++j){
-      double acc = 0.0;
-      for (int i = 0; i < n; ++i) acc += Xtilde.at(i,j) * r.at(i);
-      grad.at(j) = -acc / n;
-    }
+    // Proximal step
+    z = y_curr - s * grad;
+    for (int j = 0; j < p; ++j) x_next[j] = soft_c(z[j], lambda * s);
     
-    // z = y_curr - s * grad
-    for (int j = 0; j < p; ++j) z.at(j) = y_curr.at(j) - s * grad.at(j);
+    // Nesterov update
+    const double t_next = 0.5 * (1.0 + std::sqrt(1.0 + 4.0 * t_prev * t_prev));
+    const double mom = (t_prev - 1.0) / t_next;
+    y_next = x_next + mom * (x_next - x_curr);
     
-    // x_next = soft(z, lambda*s)
-    arma::colvec x_next(p);
-    for (int j = 0; j < p; ++j) x_next.at(j) = soft_c(z.at(j), lambda * s);
-    
-    // Nesterov
-    double t_next = 0.5 * (1.0 + std::sqrt(1.0 + 4.0 * t_prev * t_prev));
-    double mom = (t_prev - 1.0) / t_next;
-    arma::colvec y_next(p);
-    for (int j = 0; j < p; ++j)
-      y_next.at(j) = x_next.at(j) + mom * (x_next.at(j) - x_curr.at(j));
-    
-    // monotone restart
-    f_next = f_eval(x_next);
-    if (!std::isfinite(f_next) || f_next > f_curr){
-      for (int j = 0; j < p; ++j) y_next.at(j) = x_next.at(j);
-      t_next = 1.0;
+    // Monotone restart
+    double f_next = f_eval(x_next);
+    if (!std::isfinite(f_next) || f_next > f_curr) {
+      y_next = x_next;
       f_next = f_eval(x_next);
+      // also reset momentum
+      t_prev = 1.0;
+    } else {
+      t_prev = t_next;
     }
     
-    // convergence: relative L1
-    double num = 0.0, den = 1.0;
-    for (int j = 0; j < p; ++j){
-      double diff = x_next.at(j) - x_curr.at(j);
-      num += std::sqrt(diff * diff);
-      den += std::sqrt(x_curr.at(j) * x_curr.at(j));
-    }
-    if (num / den < eps){
-      for (int j = 0; j < p; ++j) beta.at(j) = x_next.at(j);
-      return beta;
-    }
+    // Convergence: relative L1 change
+    double num = arma::accu(arma::abs(x_next - x_curr));
+    double den = 1.0 + arma::accu(arma::abs(x_curr));
+    if (num / den < eps) return x_next;
     
-    // update (element-wise)
-    for (int j = 0; j < p; ++j) x_curr.at(j) = x_next.at(j);
-    for (int j = 0; j < p; ++j) y_curr.at(j) = y_next.at(j);
+    // Update state
+    x_curr = x_next;
+    y_curr = y_next;
     f_curr = f_next;
-    t_prev = t_next;
-    
-    if (iter == max_iter - 1)
-      for (int j = 0; j < p; ++j) beta.at(j) = x_curr.at(j);
   }
   
-  
-
-  return beta;
+  return x_curr; // reached max_iter
 }
