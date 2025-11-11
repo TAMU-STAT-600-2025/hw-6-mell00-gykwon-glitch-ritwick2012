@@ -357,3 +357,24 @@ testthat::test_that("deterministic runs for R and C++ Nesterov", {
   
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+
+## 13) Tiny and huge scales remain finite (R and C++) -----------------------------
+
+testthat::test_that("R and C++ outputs finite under tiny and huge scales", {
+  test_name <- "R and C++ outputs finite under tiny and huge scales"
+  n <- 50; p <- 20
+  X0 <- matrix(1e-8 * rnorm(n*p), n, p); Y0 <- 1e-8 * rnorm(n)
+  X1 <- matrix(1e+3 * rnorm(n*p), n, p); Y1 <- 1e+3 * rnorm(n)
+  std0 <- standardizeXY(X0, Y0); std1 <- standardizeXY(X1, Y1)
+  lam0 <- 0.1 * max(abs(crossprod(std0$Xtilde, std0$Ytilde)))/n
+  lam1 <- 0.1 * max(abs(crossprod(std1$Xtilde, std1$Ytilde)))/n
+  
+  r0 <- fitLASSOstandardized_prox_Nesterov(std0$Xtilde, std0$Ytilde, lam0, s = NULL, eps = 1e-8)
+  r1 <- fitLASSOstandardized_prox_Nesterov(std1$Xtilde, std1$Ytilde, lam1, s = NULL, eps = 1e-8)
+  c0 <- fitLASSO_prox_Nesterov(X0, Y0, lam0, s = NULL, eps = 1e-8)
+  c1 <- fitLASSO_prox_Nesterov(X1, Y1, lam1, s = NULL, eps = 1e-8)
+  
+  testthat::expect_true(all(is.finite(c(r0$fmin, r1$fmin, c0$fmin, c1$fmin))))
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
