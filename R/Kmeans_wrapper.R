@@ -1,15 +1,30 @@
-#' Title
+#' K-means Algorithm
 #'
-#' @param X 
-#' @param K 
-#' @param M 
-#' @param numIter 
+#' This function performs K-means clustering using an RcppArmadillo-based implementation.
 #'
-#' @return Explain return
+#' @param X matrix[n, p] A numeric matrix with n observations (rows) and p features (columns).
+#' @param K integer The number of clusters.
+#' @param M matrix[K, p] Optional initial cluster centers. If \code{NULL} (default), 
+#'   K centers are randomly chosen from the rows of \code{X}.
+#' @param numIter integer The maximum number of iterations (default = 100).
+#'
+#' @return An integer vector \code{Y} of length \code{n}, where \code{Y[i]} is the assigned
+#'   cluster number for the i-th observation.
 #' @export
 #'
 #' @examples
-#' # Give example
+#' n1 <- 40
+#' p1 <- 20
+#' K1 <- 5
+#' X1 <- matrix(rnorm(n1 * p1), n1, p1)
+#' MyKmeans(X1, K1, NULL, 100)
+#'
+#' n2 <- 50
+#' p2 <- 30
+#' K2 <- 10
+#' X2 <- matrix(rnorm(n2 * p2), n2, p2)
+#' MyKmeans(X2, K2, NULL, 50)
+
 MyKmeans <- function(X, K, M = NULL, numIter = 100){
   
   X = as.matrix(X)
