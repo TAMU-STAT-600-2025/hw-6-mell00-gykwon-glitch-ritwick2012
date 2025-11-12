@@ -35,3 +35,17 @@ testthat::test_that("determinism with same seed & M=NULL", {
   testthat::expect_identical(Y1, Y2)
 })
 
+testthat::test_that("determinism when M is provided", {
+  set.seed(6003)
+  n <- 40
+  p <- 4
+  K <- 3
+  X <- matrix(rnorm(n * p), n, p)
+  M0 <- X[sample.int(n, K, replace = FALSE), , drop = FALSE]
+  
+  # Using the same initial centers must yield identical assignments
+  Y1 <- MyKmeans(X, K, M = M0, numIter = 80)
+  Y2 <- MyKmeans(X, K, M = M0, numIter = 80)
+  testthat::expect_identical(Y1, Y2)
+})
+
