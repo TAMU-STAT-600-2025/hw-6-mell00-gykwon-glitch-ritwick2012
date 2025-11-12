@@ -49,3 +49,18 @@ testthat::test_that("determinism when M is provided", {
   testthat::expect_identical(Y1, Y2)
 })
 
+testthat::test_that("error when M has incompatible dimension", {
+  set.seed(6004)
+  n <- 20
+  p <- 3
+  K <- 3
+  X <- matrix(rnorm(n * p), n, p)
+  
+  # M has wrong number of rows (K-1 instead of K)
+  Mbad <- matrix(rnorm((K - 1) * p), K - 1, p)
+  testthat::expect_error(
+    MyKmeans(X, K, M = Mbad, numIter = 10),
+    "M must be K x p"
+  )
+})
+
