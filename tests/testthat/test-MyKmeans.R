@@ -20,3 +20,18 @@ testthat::test_that("basic run returns 1..K labels of length n", {
   tab <- table(Y)
   testthat::expect_equal(sum(tab), n)
 })
+
+
+testthat::test_that("determinism with same seed & M=NULL", {
+  set.seed(6002)
+  n <- 45
+  p <- 3
+  K <- 4
+  X <- matrix(rnorm(n * p), n, p)
+  
+  # If the seed and initialization are identical, output must match
+  set.seed(42);  Y1 <- MyKmeans(X, K, M = NULL, numIter = 50)
+  set.seed(42);  Y2 <- MyKmeans(X, K, M = NULL, numIter = 50)
+  testthat::expect_identical(Y1, Y2)
+})
+
