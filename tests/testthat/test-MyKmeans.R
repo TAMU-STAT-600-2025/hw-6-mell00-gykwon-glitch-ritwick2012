@@ -1,0 +1,22 @@
+testthat::test_that("basic run returns 1..K labels of length n", {
+  set.seed(6001)
+  n <- 60 
+  p <- 2
+  K <- 3
+  X <- rbind(
+    matrix(rnorm(n/3 * p, mean = 0, sd = 0.25), n/3, p),
+    matrix(rnorm(n/3 * p, mean = 3, sd = 0.25), n/3, p),
+    matrix(rnorm(n/3 * p, mean = 6, sd = 0.25), n/3, p)
+  )
+  
+  Y <- MyKmeans(X, K, M = NULL, numIter = 100)
+  
+  # Check that the result is an integer vector of length n
+  testthat::expect_type(Y, "integer")
+  testthat::expect_length(Y, n)
+  # All labels must be between 1 and K
+  testthat::expect_true(all(Y >= 1L & Y <= K))
+  # Ensure every point was assigned to some cluster
+  tab <- table(Y)
+  testthat::expect_equal(sum(tab), n)
+})
