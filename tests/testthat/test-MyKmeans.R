@@ -99,4 +99,18 @@ testthat::test_that("empty-cluster triggers a clear error", {
   )
 })
 
+testthat::test_that("K=1 places all points in cluster 1", {
+  set.seed(6006)
+  n <- 25
+  p <- 5
+  K <- 1
+  X <- matrix(rnorm(n * p), n, p)
+  M <- matrix(colMeans(X), K, p)
+  
+  # All points should belong to cluster 1
+  Y <- MyKmeans(X, K, M = M, numIter = 30)
+  testthat::expect_true(all(Y == 1L))
+  testthat::expect_length(Y, n)
+})
+
 
