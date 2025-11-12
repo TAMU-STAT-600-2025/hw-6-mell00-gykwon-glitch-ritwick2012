@@ -64,3 +64,39 @@ testthat::test_that("error when M has incompatible dimension", {
   )
 })
 
+
+testthat::test_that("empty-cluster triggers a clear error", {
+  set.seed(6005)
+  # Two points and three initial centers -> empty cluster must exist as K > X
+  X <- rbind(c(0, 0), c(10, 10))
+  K <- 3
+  M_bad <- rbind(c(0, 0), c(5, 5), c(10, 10))
+  # Expect the algorithm to stop when a cluster becomes empty
+  testthat::expect_error(
+    MyKmeans(X, K, M = M_bad, numIter = 10),
+    "A cluster became empty"
+  )
+})
+
+testthat::test_that("empty-cluster triggers a clear error", {
+  set.seed(7005)
+  n <- 120; p <- 2; K <- 3
+  X <- rbind(
+    matrix(rnorm(n/2 * p, mean = 0, sd = 0.3), n/2, p),
+    matrix(rnorm(n/2 * p, mean = 6, sd = 0.3), n/2, p)
+  )
+  
+  # Two reasonable centers near data, one absurdly far away (bad input)
+  M_bad <- rbind(
+    c(0, 0),
+    c(6, 6),
+    c(100, 100)  # Empty cluster occurs with a dominated far-away center (nobody chooses this)
+  )
+  
+  testthat::expect_error(
+    MyKmeans(X, K, M = M_bad, numIter = 50),
+    "A cluster became empty"
+  )
+})
+
+
