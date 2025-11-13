@@ -78,6 +78,7 @@ test_that("Error when first column of X is not all 1s", {
 
 #Test 5
 
+
 test_that("Error when eta <= 0 or lambda < 0", {
   set.seed(102)
   n <- 15
@@ -90,4 +91,20 @@ test_that("Error when eta <= 0 or lambda < 0", {
   testthat::expect_error(LRMultiClass(X, y, lambda = -1))
 })
 
+
+#Test 6
+
+test_that("K=1 returns single-column beta matrix", {
+  set.seed(111)
+  n <- 20
+  p <- 4
+  K <- 1
+  X <- cbind(1, matrix(rnorm(n*(p-1)), n, p-1))
+  y <- rep(0, n)  # all in one class
+  
+  out <- LRMultiClass(X, y, numIter = 5)
+  
+  testthat::expect_equal(dim(out$beta), c(p, 1))
+  testthat::expect_length(out$objective, 6) # numIter + 1
+})
 
