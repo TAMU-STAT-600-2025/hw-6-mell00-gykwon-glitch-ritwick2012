@@ -2,26 +2,39 @@
 % Please edit documentation in R/LR_wrapper.R
 \name{LRMultiClass}
 \alias{LRMultiClass}
-\title{Title}
+\title{Title Multiclass Logistic Regression}
 \usage{
 LRMultiClass(X, y, beta_init = NULL, numIter = 50, eta = 0.1, lambda = 1)
 }
 \arguments{
-\item{X}{}
+\item{X}{Numeric matrix of training data (n x p).}
 
-\item{y}{}
+\item{y}{Numeric response vector of length n.}
 
-\item{beta_init}{}
+\item{beta_init}{Optional initial beta values (p x K matrix). If NULL, initialized to zeros.}
 
-\item{numIter}{}
+\item{numIter}{Number of Newton iterations (default 50).}
 
-\item{eta}{}
+\item{eta}{Damping / learning rate (default 0.1).}
 
-\item{lambda}{}
+\item{lambda}{Ridge regularization parameter (default 1).}
+}
+\value{
+A list with:
+\item{beta}{p x K matrix of estimated coefficients}
+\item{objective}{Vector of objective function values at each iteration}
 }
 \description{
-Title
+Title Multiclass Logistic Regression
 }
 \examples{
-# Give example
+set.seed(1)
+n <- 50
+p <- 3
+K <- 3
+X <- cbind(1, matrix(rnorm(n*(p-1)), n, p-1))
+y <- sample(0:(K-1), n, replace=TRUE)
+out <- LRMultiClass(X, y, numIter = 20)
+out$beta
+out$objective
 }

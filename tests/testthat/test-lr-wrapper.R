@@ -168,6 +168,7 @@ test_that("Single sample per class still returns correct dimensions", {
 
 #Test 10
 
+
 test_that("LRMultiClass works with small eta and large lambda", {
   set.seed(201)
   n <- 30
