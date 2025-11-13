@@ -42,6 +42,7 @@ test_that("Objective decreases over iterations", {
 
 #Test 3
 
+
 test_that("Handles beta_init correctly", {
   set.seed(789)
   n <- 20
@@ -55,5 +56,23 @@ test_that("Handles beta_init correctly", {
   
   testthat::expect_equal(dim(out$beta), c(p, K))
 })
+
+
+#Test 4
+
+test_that("Error when first column of X is not all 1s", {
+  set.seed(101)
+  n <- 20
+  p <- 3
+  K <- 2
+  X <- matrix(rnorm(n*p), n, p)
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  testthat::expect_error(
+    LRMultiClass(X, y),
+    "First column of X must be all 1s"
+  )
+})
+
 
 
