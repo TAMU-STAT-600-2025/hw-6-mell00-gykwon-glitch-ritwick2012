@@ -60,6 +60,7 @@ test_that("Handles beta_init correctly", {
 
 #Test 4
 
+
 test_that("Error when first column of X is not all 1s", {
   set.seed(101)
   n <- 20
@@ -74,5 +75,19 @@ test_that("Error when first column of X is not all 1s", {
   )
 })
 
+
+#Test 5
+
+test_that("Error when eta <= 0 or lambda < 0", {
+  set.seed(102)
+  n <- 15
+  p <- 3
+  K <- 2
+  X <- cbind(1, matrix(rnorm(n*(p-1)), n, p-1))
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  testthat::expect_error(LRMultiClass(X, y, eta = 0))
+  testthat::expect_error(LRMultiClass(X, y, lambda = -1))
+})
 
 
