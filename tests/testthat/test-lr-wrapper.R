@@ -130,6 +130,7 @@ test_that("LRMultiClass works when n < p", {
 
 #Test 8
 
+
 test_that("Error when beta_init has wrong dimensions", {
   set.seed(555)
   n <- 20
@@ -144,6 +145,23 @@ test_that("Error when beta_init has wrong dimensions", {
     LRMultiClass(X, y, beta_init = beta_wrong),
     "beta_init dimensions must be p x K"
   )
+})
+
+
+#Test 9
+
+test_that("Single sample per class still returns correct dimensions", {
+  set.seed(204)
+  n <- 3
+  p <- 2
+  K <- 3
+  X <- cbind(1, matrix(rnorm(n*(p-1)), n, p-1))
+  y <- 0:2
+  
+  out <- LRMultiClass(X, y, numIter = 3)
+  
+  testthat::expect_equal(dim(out$beta), c(p, K))
+  testthat::expect_length(out$objective, 4)
 })
 
 
