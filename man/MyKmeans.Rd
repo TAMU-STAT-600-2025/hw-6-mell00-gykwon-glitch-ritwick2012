@@ -2,25 +2,37 @@
 % Please edit documentation in R/Kmeans_wrapper.R
 \name{MyKmeans}
 \alias{MyKmeans}
-\title{Title}
+\title{K-means Algorithm}
 \usage{
 MyKmeans(X, K, M = NULL, numIter = 100)
 }
 \arguments{
-\item{X}{}
+\item{X}{matrix[n, p] A numeric matrix with n observations (rows) and p features (columns).}
 
-\item{K}{}
+\item{K}{integer The number of clusters.}
 
-\item{M}{}
+\item{M}{matrix[K, p] Optional initial cluster centers. If \code{NULL} (default), 
+K centers are randomly chosen from the rows of \code{X}.}
 
-\item{numIter}{}
+\item{numIter}{integer The maximum number of iterations (default = 100).}
 }
 \value{
-Explain return
+An integer vector \code{Y} of length \code{n}, where \code{Y[i]} is the assigned
+  cluster number for the i-th observation.
 }
 \description{
-Title
+This function performs K-means clustering using an RcppArmadillo-based implementation.
 }
 \examples{
-# Give example
+n1 <- 40
+p1 <- 20
+K1 <- 5
+X1 <- matrix(rnorm(n1 * p1), n1, p1)
+MyKmeans(X1, K1, NULL, 100)
+
+n2 <- 50
+p2 <- 30
+K2 <- 10
+X2 <- matrix(rnorm(n2 * p2), n2, p2)
+MyKmeans(X2, K2, NULL, 50)
 }
