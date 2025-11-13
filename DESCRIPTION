@@ -1,10 +1,10 @@
 Package: GroupHW
 Type: Package
-Title: What the package does (short line)
+Title: Efficient K-means, Multiclass Logistic Regression, and LASSO via RcppArmadillo
 Version: 1.0
 Date: 2020-10-17
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
+Author: Madison Ell [aut], Gayun Kwon [aut], Ritwick Mondal [aut]
+Maintainer:  Ritwick Mondal <ritwick12@tamu.edu>
 Description: Implements k-means, multiclass logistic regression, and LASSO via proximal gradient with Nesterov acceleration.
   Provides R and C++ backends using RcppArmadillo, along with tests and timing utilities.
 License: MIT + file LICENSE
@@ -15,3 +15,5 @@ Encoding: UTF-8
 Suggests: 
     testthat (>= 3.0.0), bench, microbenchmark
 Config/testthat/edition: 3
+
+
