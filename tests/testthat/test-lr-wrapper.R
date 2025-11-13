@@ -112,6 +112,7 @@ test_that("K=1 returns single-column beta matrix", {
 
 #Test 7
 
+
 test_that("LRMultiClass works when n < p", {
   set.seed(333)
   n <- 3
@@ -124,6 +125,25 @@ test_that("LRMultiClass works when n < p", {
   
   testthat::expect_equal(dim(out$beta), c(p, K))
   testthat::expect_length(out$objective, 6)
+})
+
+
+#Test 8
+
+test_that("Error when beta_init has wrong dimensions", {
+  set.seed(555)
+  n <- 20
+  p <- 3
+  K <- 2
+  X <- cbind(1, matrix(rnorm(n*(p-1)), n, p-1))
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  beta_wrong <- matrix(0, nrow = p, ncol = K + 1) # wrong number of columns
+  
+  testthat::expect_error(
+    LRMultiClass(X, y, beta_init = beta_wrong),
+    "beta_init dimensions must be p x K"
+  )
 })
 
 
