@@ -12,6 +12,18 @@
 #' @param Y Optional numeric vector. If provided, X must also be provided.
 #' @return list with fits, microbenchmark, lambda, std, and the X,Y used
 #' @export
+#' 
+#' @examples
+#' set.seed(600)
+#' # Small toy example, no plotting so that examples run fast
+#' res <- run_lasso_time_comparison(n = 30, p = 50,
+#'                                  plot = FALSE, s_step = 0.1)
+#'
+#' # Difference in objective values between C++ and R implementations
+#' res$fmin_diff
+#'
+#' # Show timing summary (microbenchmark object)
+#' res$bench
 run_lasso_time_comparison <- function(n = 30, p = 50, seed = 38947,
                                       plot = interactive(), s_step = 0.1,
                                       X = NULL, Y = NULL) {
