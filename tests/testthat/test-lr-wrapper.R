@@ -168,7 +168,6 @@ test_that("Single sample per class still returns correct dimensions", {
 
 #Test 10
 
-
 test_that("LRMultiClass works with small eta and large lambda", {
   set.seed(201)
   n <- 30
@@ -183,4 +182,28 @@ test_that("LRMultiClass works with small eta and large lambda", {
   testthat::expect_length(out$objective, 11)
   # Check objective decreases or stays almost the same (small step size)
   testthat::expect_true(all(diff(out$objective) <= 1e-5 + 1e-8))
+})
+
+
+#Test 11
+
+test_that("Predicted probabilities from softmax sum to 1 for each observation", {
+  set.seed(321)
+  n <- 50
+  p <- 4
+  K <- 3
+  X <- cbind(1, matrix(rnorm(n*(p-1)), n, p-1))
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  out <- LRMultiClass(X, y, numIter = 10)
+  beta <- out$beta
+  
+  # Compute probabilities
+  scores <- X %*% beta
+  scores <- sweep(scores, 1, apply(scores, 1, max)) # numerical stability
+  exp_scores <- exp(scores)
+  P <- exp_scores / rowSums(exp_scores)
+  
+  # Each row should sum to 1
+  testthat::expect_true(all(abs(rowSums(P) - 1) < 1e-8))
 })
