@@ -150,6 +150,7 @@ test_that("Error when beta_init has wrong dimensions", {
 
 #Test 9
 
+
 test_that("Single sample per class still returns correct dimensions", {
   set.seed(204)
   n <- 3
@@ -165,3 +166,20 @@ test_that("Single sample per class still returns correct dimensions", {
 })
 
 
+#Test 10
+
+test_that("LRMultiClass works with small eta and large lambda", {
+  set.seed(201)
+  n <- 30
+  p <- 3
+  K <- 3
+  X <- cbind(1, matrix(rnorm(n*(p-1)), n, p-1))
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  out <- LRMultiClass(X, y, numIter = 10, eta = 0.01, lambda = 10)
+  
+  testthat::expect_equal(dim(out$beta), c(p, K))
+  testthat::expect_length(out$objective, 11)
+  # Check objective decreases or stays almost the same (small step size)
+  testthat::expect_true(all(diff(out$objective) <= 1e-5 + 1e-8))
+})
