@@ -24,6 +24,7 @@ test_that("LRMultiClass returns beta matrix and objective vector of correct size
 
 #Test 2
 
+
 test_that("Objective decreases over iterations", {
   set.seed(456)
   n <- 25
@@ -37,4 +38,22 @@ test_that("Objective decreases over iterations", {
   # Objective should not increase
   testthat::expect_true(all(diff(out$objective) <= 1e-6 + 1e-8))
 })
+
+
+#Test 3
+
+test_that("Handles beta_init correctly", {
+  set.seed(789)
+  n <- 20
+  p <- 3
+  K <- 3
+  X <- cbind(1, matrix(rnorm(n*(p-1)), n, p-1))
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  beta_init <- matrix(0.5, nrow = p, ncol = K)
+  out <- LRMultiClass(X, y, beta_init = beta_init, numIter = 5)
+  
+  testthat::expect_equal(dim(out$beta), c(p, K))
+})
+
 
