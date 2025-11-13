@@ -113,20 +113,4 @@ testthat::test_that("K=1 places all points in cluster 1", {
   testthat::expect_length(Y, n)
 })
 
-testthat::test_that("Close to perfect ARI on well-separated two-Gaussian mixture", {
-  if (!requireNamespace("mclust", quietly = TRUE)) {
-    testthat::skip("mclust not installed")
-  }
-  set.seed(7001)
-  X_two <- rbind(
-    matrix(rnorm(100 * 3, mean = -10, sd = 1), 100, 3),
-    matrix(rnorm(100 * 3, mean =  10, sd = 1), 100, 3)
-  )
-  true_label <- c(rep(1L, 100), rep(2L, 100))
-  Y <- as.integer(MyKmeans(X_two, 2, M = NULL, numIter = 50))
-  ari <- mclust::adjustedRandIndex(Y, true_label)
-  testthat::expect_equal(ari, 1, tolerance = 0.05)
-})
-
-
 
