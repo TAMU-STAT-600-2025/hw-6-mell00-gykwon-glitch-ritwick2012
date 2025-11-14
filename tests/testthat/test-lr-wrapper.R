@@ -287,4 +287,20 @@ test_that("C++ wrapper is faster than pure R implementation", {
   expect_lt(mean_Cpp, mean_R / 3)
 })
 
+# Test 13
+test_that("LRMultiClass handles extremely large X values without NaN", {
+  set.seed(701)
+  n <- 20
+  p <- 4
+  K <- 3
+  
+  X <- cbind(1, matrix(1e6 * rnorm(n * (p-1)), n, p-1))  # large-scale predictors
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  out <- LRMultiClass(X, y, numIter = 5)
+  
+  testthat::expect_false(any(is.nan(out$objective)))
+  testthat::expect_false(any(is.nan(out$beta)))
+})
+
 
