@@ -441,3 +441,22 @@ testthat::test_that("correlated predictors handled correctly", {
   
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+## 16) High-dimensional scenario (p >> n)
+
+testthat::test_that("high-dimensional p >> n", {
+  test_name <- "high-dimensional p >> n"
+  n <- 30; p <- 100
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.2 * max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  
+  fit_r <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam)
+  
+  # check sparsity
+  nnz <- sum(abs(fit_r$beta) > 1e-8)
+  testthat::expect_true(nnz <= n)
+  
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
