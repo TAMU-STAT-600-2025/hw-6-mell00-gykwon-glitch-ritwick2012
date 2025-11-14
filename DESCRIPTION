@@ -15,5 +15,3 @@ Encoding: UTF-8
 Suggests: 
     testthat (>= 3.0.0), bench, microbenchmark
 Config/testthat/edition: 3
-
-

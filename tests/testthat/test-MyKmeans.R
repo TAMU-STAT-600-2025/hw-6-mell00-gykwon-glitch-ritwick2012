@@ -114,3 +114,26 @@ testthat::test_that("K=1 places all points in cluster 1", {
 })
 
 
+testthat::test_that("MyKmeans works with user-supplied initial centers M", {
+  set.seed(1234)
+  n <- 50
+  p <- 4
+  K <- 5
+  
+  X <- matrix(rnorm(n * p), n, p)
+  
+  # Supply M as first K rows of X
+  M <- X[1:K, , drop = FALSE]
+  
+  Y <- MyKmeans(X, K, M = M, numIter = 50)
+  
+  testthat::expect_type(Y, "integer")
+  testthat::expect_length(Y, n)
+  testthat::expect_true(all(Y >= 1L & Y <= K))
+  
+  # Each cluster should receive at least one point
+  tab <- table(Y)
+  testthat::expect_equal(sum(tab), n)
+})
+
+
