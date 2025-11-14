@@ -361,3 +361,27 @@ test_that("LRMultiClass handles collinear predictors", {
   testthat::expect_false(any(is.infinite(out$objective)))
 })
 
+
+# Test 17
+
+test_that("Permutation of rows does not change fitted coefficients", {
+  set.seed(604)
+  n <- 60
+  p <- 4
+  K <- 3
+  X <- cbind(1, matrix(rnorm(n * (p - 1)), n, p - 1))
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  out_orig <- LRMultiClass(X, y, numIter = 15, eta = 0.1, lambda = 1)
+  
+  perm <- sample.int(n)
+  X_perm <- X[perm, , drop = FALSE]
+  y_perm <- y[perm]
+  
+  out_perm <- LRMultiClass(X_perm, y_perm, numIter = 15, eta = 0.1, lambda = 1)
+  
+  # allow tiny numerical differences
+  testthat::expect_equal(out_orig$beta, out_perm$beta, tolerance = 1e-6)
+  testthat::expect_equal(out_orig$objective, out_perm$objective, tolerance = 1e-6)
+})
+
