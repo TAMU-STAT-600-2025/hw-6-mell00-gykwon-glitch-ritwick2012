@@ -303,4 +303,21 @@ test_that("LRMultiClass handles extremely large X values without NaN", {
   testthat::expect_false(any(is.nan(out$beta)))
 })
 
+# Test 14
+
+test_that("LRMultiClass handles very large lambda", {
+  set.seed(705)
+  n <- 40
+  p <- 5
+  K <- 3
+  
+  X <- cbind(1, matrix(rnorm(n * (p-1)), n, p-1))
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  out <- LRMultiClass(X, y, numIter = 10, lambda = 1e6)
+  
+  # coefficients should shrink almost to zero
+  testthat::expect_true(max(abs(out$beta)) < 1e-3)
+})
+
 
