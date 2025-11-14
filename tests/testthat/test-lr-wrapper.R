@@ -286,3 +286,5 @@ test_that("C++ wrapper is faster than pure R implementation", {
   
   expect_lt(mean_Cpp, mean_R / 3)
 })
+
+
