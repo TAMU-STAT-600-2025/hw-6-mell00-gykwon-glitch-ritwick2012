@@ -342,3 +342,22 @@ test_that("LRMultiClass handles nearly separable classes", {
 })
 
 
+# Test 16
+
+test_that("LRMultiClass handles collinear predictors", {
+  set.seed(702)
+  n <- 30
+  p <- 4
+  K <- 3
+  
+  z <- rnorm(n)
+  X <- cbind(1, z, z, z)  # identical columns
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  out <- LRMultiClass(X, y, numIter = 10)
+  
+  # ensure the algorithm runs and objective finite
+  testthat::expect_equal(dim(out$beta), c(p, K))
+  testthat::expect_false(any(is.infinite(out$objective)))
+})
+
