@@ -153,3 +153,25 @@ testthat::test_that("MyKmeans works when p >> n", {
   tab <- table(Y)
   testthat::expect_equal(sum(tab), n)
 })
+
+testthat::test_that("handles huge scale and extreme outlier without NA/NaN", {
+  set.seed(7007)
+  n_main <- 100
+  n_out  <- 5
+  p <- 3
+  K <- 2
+  
+  # main cloud near the origin
+  X_main <- matrix(rnorm(n_main * p, mean = 0, sd = 1), n_main, p)
+  # a few points at very large magnitude
+  X_out  <- matrix(1e6 + rnorm(n_out * p, mean = 0, sd = 1), n_out, p)
+  X <- rbind(X_main, X_out)
+  
+  Y <- MyKmeans(X, K, M = NULL, numIter = 30)
+  
+  testthat::expect_type(Y, "integer")
+  testthat::expect_length(Y, n_main + n_out)
+  testthat::expect_true(all(Y >= 1L & Y <= K))
+  testthat::expect_false(any(is.na(Y)))
+})
+
