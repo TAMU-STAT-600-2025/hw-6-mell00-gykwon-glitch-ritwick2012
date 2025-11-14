@@ -320,4 +320,25 @@ test_that("LRMultiClass handles very large lambda", {
   testthat::expect_true(max(abs(out$beta)) < 1e-3)
 })
 
+# Test 15
+
+test_that("LRMultiClass handles nearly separable classes", {
+  set.seed(703)
+  n <- 60
+  p <- 3
+  K <- 2
+  
+  x_raw <- rnorm(n)
+  # y almost perfectly determined by sign(x)
+  y <- ifelse(x_raw > 0, 1, 0)
+  
+  # large signal to exaggerate separability
+  X <- cbind(1, x_raw, 10 * x_raw)
+  
+  out <- LRMultiClass(X, y, numIter = 25, lambda = 1)
+  
+  testthat::expect_equal(dim(out$beta), c(p, K))
+  testthat::expect_false(any(is.nan(out$objective)))
+})
+
 
