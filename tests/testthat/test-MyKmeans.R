@@ -113,7 +113,6 @@ testthat::test_that("K=1 places all points in cluster 1", {
   testthat::expect_length(Y, n)
 })
 
-
 testthat::test_that("MyKmeans works with user-supplied initial centers M", {
   set.seed(1234)
   n <- 50
@@ -135,7 +134,6 @@ testthat::test_that("MyKmeans works with user-supplied initial centers M", {
   tab <- table(Y)
   testthat::expect_equal(sum(tab), n)
 })
-
 
 testthat::test_that("MyKmeans works when p >> n", {
   set.seed(9001)
