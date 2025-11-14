@@ -48,4 +48,3 @@ MyKmeans <- function(X, K, M = NULL, numIter = 100){
   return(Y)
 }
 
-
