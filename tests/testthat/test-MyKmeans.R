@@ -137,3 +137,21 @@ testthat::test_that("MyKmeans works with user-supplied initial centers M", {
 })
 
 
+testthat::test_that("MyKmeans works when p >> n", {
+  set.seed(9001)
+  n <- 20     # small sample size
+  p <- 200    # huge number of features
+  K <- 4
+  
+  X <- matrix(rnorm(n * p), n, p)
+  
+  Y <- MyKmeans(X, K, M = NULL, numIter = 100)
+  
+  testthat::expect_type(Y, "integer")
+  testthat::expect_length(Y, n)
+  testthat::expect_true(all(Y >= 1L & Y <= K))
+  
+  # Every point assigned
+  tab <- table(Y)
+  testthat::expect_equal(sum(tab), n)
+})

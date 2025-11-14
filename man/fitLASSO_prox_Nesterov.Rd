@@ -32,3 +32,13 @@ A list with:
 \description{
 LASSO via proximal gradient with Nesterov acceleration
 }
+\examples{
+set.seed(600)
+n <- 30
+p <- 50 # p > n
+X <- matrix(rnorm(n * p), n, p)
+Y <- rnorm(n)
+lambda <- 0.1
+fit <- fitLASSO_prox_Nesterov(X, Y, lambda, eps = 1e-4, s = 0.1)
+fit$beta
+}

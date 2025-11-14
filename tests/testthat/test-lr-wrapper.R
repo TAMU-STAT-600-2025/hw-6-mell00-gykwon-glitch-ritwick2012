@@ -218,7 +218,7 @@ test_that("Predicted probabilities from softmax sum to 1 for each observation", 
 test_that("C++ wrapper is faster than pure R implementation", {
   
   old <- getOption("warn")
-  options(warn = -1)   # temporarily suppress warnings
+  options(warn = -1)   
   
   suppressPackageStartupMessages(library(microbenchmark))
   

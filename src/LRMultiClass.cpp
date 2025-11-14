@@ -24,7 +24,7 @@ Rcpp::List LRMultiClass_c(const arma::mat& X, const arma::uvec& y, const arma::m
   int K = arma::max(y) + 1; // number of classes
   int p = X.n_cols;
   int n = X.n_rows;
-
+  
   
   arma::mat beta = beta_init; // to store betas and be able to change them if needed
   arma::vec objective(numIter + 1); // to store objective values

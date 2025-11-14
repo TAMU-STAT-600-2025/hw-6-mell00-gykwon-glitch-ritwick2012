@@ -35,3 +35,15 @@ list with fits, microbenchmark, lambda, std, and the X,Y used
 \description{
 Run timing and consistency checks for the Nesterov LASSO implementations
 }
+\examples{
+set.seed(600)
+# Small toy example, no plotting so that examples run fast
+res <- run_lasso_time_comparison(n = 30, p = 50,
+                                 plot = FALSE, s_step = 0.1)
+
+# Difference in objective values between C++ and R implementations
+res$fmin_diff
+
+# Show timing summary (microbenchmark object)
+res$bench
+}
