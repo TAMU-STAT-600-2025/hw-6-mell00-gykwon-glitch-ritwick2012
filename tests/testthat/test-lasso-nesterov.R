@@ -419,3 +419,25 @@ testthat::test_that("reasonable timing/consistency (Nesterov R and C++)", {
                         sprintf("timing ratio cpp/r = %.2f not in [0.5, 2.5]", ratio))
   cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
 })
+
+## 15) Correlated predictors
+
+testthat::test_that("correlated predictors handled correctly", {
+  test_name <- "correlated predictors handled correctly"
+  n <- 50; p <- 20
+  set.seed(2025)
+  X <- matrix(rnorm(n*p), n, p)
+  X[,2] <- X[,1] + 0.01*rnorm(n)  # induce high correlation
+  Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam <- 0.1 * max(abs(crossprod(std$Xtilde, std$Ytilde)))/n
+  
+  fit_r <- fitLASSOstandardized_prox_Nesterov(std$Xtilde, std$Ytilde, lam)
+  fit_cpp <- fitLASSO_prox_Nesterov(X, Y, lam)
+  
+  testthat::expect_true(is.finite(fit_r$fmin))
+  testthat::expect_true(is.finite(fit_cpp$fmin))
+  testthat::expect_true(length(fit_r$beta) == p && length(fit_cpp$beta) == p)
+  
+  cat(test_name, "PASSED\n"); n_ok <<- n_ok + 1L
+})
