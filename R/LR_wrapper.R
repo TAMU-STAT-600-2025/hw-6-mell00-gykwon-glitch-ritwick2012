@@ -48,4 +48,3 @@ LRMultiClass <- function(X, y, beta_init = NULL, numIter = 50, eta = 0.1, lambda
   # Return the class assignments
   return(out)
 }
-
