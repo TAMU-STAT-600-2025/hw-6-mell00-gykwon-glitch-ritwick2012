@@ -1,4 +1,6 @@
 library(testthat)
+library(GroupHW)
+
 
 #Test 1
 
@@ -187,6 +189,7 @@ test_that("LRMultiClass works with small eta and large lambda", {
 
 #Test 11
 
+
 test_that("Predicted probabilities from softmax sum to 1 for each observation", {
   set.seed(321)
   n <- 50
@@ -206,4 +209,80 @@ test_that("Predicted probabilities from softmax sum to 1 for each observation", 
   
   # Each row should sum to 1
   testthat::expect_true(all(abs(rowSums(P) - 1) < 1e-8))
+})
+
+
+#Test 12 
+
+
+test_that("C++ wrapper is faster than pure R implementation", {
+  
+  old <- getOption("warn")
+  options(warn = -1)   # temporarily suppress warnings
+  
+  suppressPackageStartupMessages(library(microbenchmark))
+  
+  
+  set.seed(123)
+  n <- 100
+  p <- 10
+  K <- 3
+  X <- cbind(1, matrix(rnorm(n*(p-1)), n, p-1))
+  y <- sample(0:(K-1), n, replace = TRUE)
+  
+  # Pure R Newton implementation
+  LRMultiClass_R <- function(X, y, beta_init = NULL, numIter = 20, eta = 0.1, lambda = 1){
+    n <- nrow(X); p <- ncol(X)
+    K <- length(unique(y))
+    if(is.null(beta_init)) beta_init <- matrix(0, nrow = p, ncol = K)
+    beta <- beta_init
+    objective <- numeric(numIter + 1)
+    
+    softmax <- function(X, beta){
+      scores <- X %*% beta
+      scores <- sweep(scores, 1, apply(scores, 1, max)) # numeric stability
+      exp_scores <- exp(scores)
+      exp_scores / rowSums(exp_scores)
+    }
+    
+    obj_fn <- function(beta){
+      P <- softmax(X, beta)
+      loglik <- sum(log(P[cbind(1:n, y + 1)]))
+      reg <- 0.5 * lambda * sum(beta^2)
+      -loglik + reg
+    }
+    
+    objective[1] <- obj_fn(beta)
+    
+    for(t in 1:numIter){
+      P <- softmax(X, beta)
+      for(k in 1:K){
+        pk <- P[,k]
+        yk <- as.numeric(y == (k-1))
+        gk <- t(X) %*% (pk - yk) + lambda * beta[,k]
+        wk <- pk * (1 - pk)
+        Hk <- t(X) %*% (X * wk) + lambda * diag(p)
+        delta <- solve(Hk, gk)
+        beta[,k] <- beta[,k] - eta * delta
+      }
+      objective[t+1] <- obj_fn(beta)
+    }
+    
+    list(beta = beta, objective = objective)
+  }
+  
+  # Microbenchmark both
+  mb <- microbenchmark(
+    R_only = LRMultiClass_R(X, y, numIter = 20),
+    Cpp_via_wrapper = LRMultiClass(X, y, numIter = 20),
+    times = 5
+  )
+  
+  print(mb)
+  
+  # Test: C++ should be at least 3x faster than pure R
+  mean_R <- mean(mb$time[mb$expr == "R_only"])
+  mean_Cpp <- mean(mb$time[mb$expr == "Cpp_via_wrapper"])
+  
+  expect_lt(mean_Cpp, mean_R / 3)
 })
