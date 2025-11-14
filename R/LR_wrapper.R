@@ -1,4 +1,7 @@
 #' Title Multiclass Logistic Regression
+#' 
+#' This function fits a K-class multinomial logistic regression model using the
+#' damped Newton update described in the Homework 3 specification.
 #'
 #' @param X Numeric matrix of training data (n x p).
 #' @param y Numeric response vector of length n.
@@ -14,6 +17,7 @@
 #' @export
 #'
 #' @examples
+#' 
 #' set.seed(1)
 #' n <- 50
 #' p <- 3
@@ -23,6 +27,13 @@
 #' out <- LRMultiClass(X, y, numIter = 20)
 #' out$beta
 #' out$objective
+#' 
+#' #Convergence plot
+#' plot(out$objective, type = "o",
+#'      main = "Convergence of Penalized Negative Log-Likelihood",
+#'      xlab = "Iteration", ylab = "Objective")
+
+
 LRMultiClass <- function(X, y, beta_init = NULL, numIter = 50, eta = 0.1, lambda = 1){
   
   # Compatibility checks from HW3 and initialization of beta_init
