@@ -25,9 +25,11 @@ A list with:
 \item{objective}{Vector of objective function values at each iteration}
 }
 \description{
-Title Multiclass Logistic Regression
+This function fits a K-class multinomial logistic regression model using the
+damped Newton update described in the Homework 3 specification.
 }
 \examples{
+
 set.seed(1)
 n <- 50
 p <- 3
@@ -37,4 +39,9 @@ y <- sample(0:(K-1), n, replace=TRUE)
 out <- LRMultiClass(X, y, numIter = 20)
 out$beta
 out$objective
+
+#Convergence plot
+plot(out$objective, type = "o",
+     main = "Convergence of Penalized Negative Log-Likelihood",
+     xlab = "Iteration", ylab = "Objective")
 }
